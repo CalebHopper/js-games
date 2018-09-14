@@ -1,0 +1,1282 @@
+﻿<html>
+  <head>
+    <script>
+      var started = false;
+      var player1 = null;
+      var left = false;
+      var up = false;
+      var right = false;
+      var down = false;
+      var fire = false;
+      var starsHolder = [];
+      var numberOfStars = 50;
+      var projectileHolder = [];
+      var projectileCounter = 0;
+      var projectileCountStartPos = 0;
+      var obstacleHolder = [];
+      var obstacleCounter = 0;
+      var obstacleCountStartPos = 0;
+      var enemy1Holder = [];
+      var enemy1Counter = 0;
+      var enemy2Holder = [];
+      var enemy2Counter = 0;
+      var bossHolder = [];
+      var bossCounter = 0;
+      var explosionHolder = [];
+      var explosionCounter = 0;
+      var enemyProjectileHolder = [];
+      var enemyProjectileCounter = 0;
+      var bonusItemHolder = [];
+      var bonusItemCounter = 0;
+      var gridPrecision = 32;
+      var lives = 3;
+      var level = 1;
+      var score = 0;
+      function init() {
+        window.addEventListener('keydown',this.sToStart,false);
+		window.addEventListener('keyup',this.checkUp,false);
+        window.addEventListener('keydown',this.checkDown,false);
+        player1 = new player();
+        for (x=0; x<numberOfStars; x++) {
+          starsHolder[x] = new star();
+        }
+        introScene();
+        ///main();
+      }
+
+      function main() {
+        started = true;
+        ///CLEAR THE SCREEN
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle="rgb(0,40,100)";
+        ctx.fillRect(0,0,canvas.width, canvas.height);
+        ///ctx.clearRect(0,0,canvas.width, canvas.height);
+        ///ACTIONS
+        for (x=0; x<numberOfStars; x++) {
+          moveStar(starsHolder[x]);
+          drawStar(starsHolder[x]);
+        }
+        
+        if (Math.round(Math.random()*(100-level)) == 1) {
+          obstacleHolder[obstacleCounter] = new obstacle();
+          obstacleCounter++;
+        }
+        if (Math.round(Math.random()*(3000+level)) == 1) {
+          bonusItemHolder[bonusItemCounter] = new bonusItem();
+          bonusItemCounter++;
+        }
+        if (level > 2) {
+          if (Math.round(Math.random()*(600-level)) == 1) {
+            enemy1Holder[enemy1Counter] = new enemy1();
+            enemy1Counter++;
+          }
+        }
+        if (level > 6) {
+          if (Math.round(Math.random()*(200-level)) == 1) {
+            enemy2Holder[enemy2Counter] = new enemy2();
+            enemy2Counter++;
+          }
+        }
+        if (level > 9) {
+          if (Math.round(Math.random()*20000) == 1) {
+            bossHolder[bossCounter] = new boss();
+            bossCounter++;
+          }
+        }
+        move(player1);
+        fireProjectile(player1); 
+        if (obstacleCounter > 0) {
+          for (x=obstacleCountStartPos;x<obstacleCounter; x++) {
+            if (obstacleHolder[x].x < 0) {
+              obstacleHolder[x] = 0;
+            }
+            if (obstacleHolder != 0) {
+              moveObstacle(obstacleHolder[x]);
+              drawObstacle(obstacleHolder[x]);
+            }
+          }
+        }
+        if (projectileCounter > 0) {
+          for (x=projectileCountStartPos; x<projectileCounter; x++) {
+            if (projectileHolder[x].x > canvas.width) {
+              projectileHolder[x] = 0;
+            }
+            if (projectileHolder[x] != 0) {
+              moveProjectile(projectileHolder[x]);
+              drawProjectile(projectileHolder[x]);
+            }
+          }
+        }
+        if (explosionCounter > 0) {
+          for (x=0; x<explosionCounter; x++) {
+            if (explosionHolder[x] != 0) {
+              moveExplosion(explosionHolder[x]);
+              drawExplosion(explosionHolder[x]);
+              explosionHolder[x].alpha -= 0.1;
+              if (explosionHolder[x].alpha < 0) {
+                explosionHolder[x] = 0;
+              }
+            }
+          }
+        }
+        if (enemy1Counter > 0) {
+          for (x=0; x<enemy1Counter; x++) {
+            if (enemy1Holder[x] != 0) {
+              moveEnemy1(enemy1Holder[x]);
+              drawEnemy1(enemy1Holder[x]);
+            }
+          }
+        }
+        if (enemy2Counter > 0) {
+          for (x=0; x<enemy2Counter; x++) {
+            if (enemy2Holder[x] != 0) {
+              moveEnemy2(enemy2Holder[x]);
+              drawEnemy2(enemy2Holder[x]);
+            }
+          }
+        }
+        if (bossCounter > 0) {
+          for (x=0; x<bossCounter; x++) {
+            if (bossHolder[x] != 0) {
+              moveBoss(bossHolder[x]);
+              drawBoss(bossHolder[x]);
+            }
+          }
+        }
+        if (enemyProjectileCounter > 0) {
+          for (x=0; x<enemyProjectileCounter; x++) {
+            if (enemyProjectileHolder[x] != 0) {
+              moveEnemyProjectile(enemyProjectileHolder[x]);
+              drawEnemyProjectile(enemyProjectileHolder[x]);
+            }
+          }
+        }
+        if (bonusItemCounter > 0) {
+          for (x=0; x<bonusItemCounter; x++) {
+            if (bonusItemHolder[x] != 0) {
+              movebonusItem(bonusItemHolder[x]);
+              drawbonusItem(bonusItemHolder[x]);
+            }
+          }
+        }
+        drawPlayer1();
+        drawLevelLivesScore();
+        gridCollisionPossibilitiesLists();
+        checkForCollisions();
+        window.requestAnimationFrame(main);
+      }
+
+      function introScene() {
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle="rgb(0,40,100)";
+        ctx.fillRect(0,0,canvas.width, canvas.height);
+        for (x=0; x<numberOfStars; x++) {
+          moveStar(starsHolder[x]);
+          drawStar(starsHolder[x]);
+        }
+        ctx.fillStyle="rgb(255,255,255)";
+        ctx.font = "40px Small Fonts";
+        ctx.fillText("Space Adventure", 140, 200);
+        ctx.font = "20px Small Fonts";
+        ctx.fillText("Press 'S' to begin...", 220, 300);
+        if (started == false) {
+          window.requestAnimationFrame(introScene);
+        }
+      }
+
+      function drawLevelLivesScore() {
+        if (score > ((level*level)*100)) {
+          projectileHolder = [];
+          projectileCounter = 0;
+          obstacleHolder = [];
+          obstacleCounter = 0;
+          explosionHolder = [];
+          explosionCounter = 0;
+          enemy1Holder = [];
+          enemy1Counter = 0;
+          enemy2Holder = [];
+          enemy2Counter = 0;
+          enemyProjectileHolder = [];
+          enemyProjectileCounter = 0;
+          bonusItemHolder = [];
+          bonusItemCounter = 0;
+          bossHolder = [];
+          bossCounter = 0;
+          level += 1;
+        }
+        if (lives <= 0) {
+          alert("Game Over!");
+        }
+        var readout = "Level: " + level + " | Lives Remaining: " + lives + " | Health:" + player1.health + "/" + player1.maxHealth + " | Ammo: " + player1.ammo + " | Score: " + score;
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle="rgb(255,255,255)";
+        ctx.font = "12px Verdana";
+        ctx.fillText(readout, 20, 20);	
+      }
+
+      function sToStart(e) {
+        var code = e.keyCode;
+        if (code == 83 && started == false) {
+          window.removeEventListener('keydown',this.sToStart,false);
+          main();
+        }
+      }
+
+      function checkDown(e) {
+        var code = e.keyCode;
+        switch(code) {
+          case 37: left = true; break; ///LEFT
+          case 38: up = true; break; ///UP
+          case 39: right = true; break; ///RIGHT
+          case 40: down = true; break; ///DOWN
+          case 32: fire = true; break; ///SPACEBAR
+          default: ;
+                   }
+      }
+
+      function checkUp(e) {
+        var code = e.keyCode;
+        switch(code) {
+          case 37: left = false; break; ///LEFT
+          case 38: up = false; break; ///UP
+          case 39: right = false; break; ///RIGHT
+          case 40: down = false; break; ///DOWN
+          case 32: fire = false; break; ///SPACEBAR
+          default: ;
+                   }
+      }
+
+      function star() {
+        this.x = Math.random()*600;
+        this.y = Math.random()*400;
+        this.size = (Math.random()*5)+1;
+        this.speed = (Math.random()*5)+level/4;
+        return this;
+      }
+
+      function player() {
+        this.speed = 0;
+        this.maxSpeed = 5;
+        this.direction = 0;
+        this.size = 20;
+        this.x = 100;
+        this.y = 200;
+        this.cellX = Math.round(this.x/gridPrecision);
+        this.cellY = Math.round(this.y/gridPrecision);
+        this.health = 10;
+        this.upgradeAtk = false;
+        this.upgradeDef = false;
+        this.maxHealth = 10;
+        this.ammo = 100;
+        return this;
+      }
+
+      function bonusItem() {
+        this.type = 1;
+        if (level > 4) {
+          if (player1.upgradeAtk == false && player1.upgradeDef == false) {
+            this.type = Math.round(Math.random()*3);
+          }
+          if (player1.upgradeAtk == true && player1.upgradeDef == false) {
+            this.type = Math.round(Math.random()*2);
+            if (this.type == 2) {
+              this.type = 3;
+            }
+          }
+          if (player1.upgradeAtk == false && player1.upgradeDef == true) {
+            this.type = Math.round(Math.random()*2);
+          }
+        }
+        this.speed = 1;
+        this.direction = Math.PI;
+        this.size = 25;
+        this.x = 600 + this.size;
+        this.y = Math.random() * 400;
+        this.cellX = Math.round(this.x/gridPrecision);
+        this.cellY = Math.round(this.y/gridPrecision);
+        return this;
+      }
+
+      function obstacle() {
+        this.speed = 1 + (level/4);
+        this.direction = Math.random()*(2*Math.PI);
+        this.size = 30;
+        this.x = 600 + this.size;
+        this.y = Math.round(Math.random() * 400);
+        this.cellX = Math.round(this.x/gridPrecision);
+        this.cellY = Math.round(this.y/gridPrecision);
+        this.health = 10;
+        return this;
+      }
+
+      function enemy1() {
+        this.speed = 1 + (level/8);
+        this.direction = Math.PI;
+        this.size = 20;
+        this.x = 600 + this.size;
+        this.y = Math.round(Math.random() * 400);
+        this.cellX = Math.round(this.x/gridPrecision);
+        this.cellY = Math.round(this.y/gridPrecision);
+        this.health = 20;
+        this.rotation = 0;
+        return this;
+      }
+
+      function enemy2() {
+        this.speed = 2 + (level/8);
+        this.direction = Math.PI;
+        this.size = 20;
+        this.x = 600 + this.size;
+        this.y = Math.round(Math.random() * 400);
+        this.cellX = Math.round(this.x/gridPrecision);
+        this.cellY = Math.round(this.y/gridPrecision);
+        this.health = 30;
+        return this;
+      }
+
+      function boss() {
+        this.lvl = Math.round(level/10);
+        this.health = 200 * this.lvl;
+        this.size = 50;
+        this.direction = 2 * Math.PI;
+        this.rotation = 2 * Math.PI;
+        this.speed = 1;
+        this.x = 600 + this.size;
+        this.y = Math.random() * 400;
+        this.cellX = Math.round(this.x/gridPrecision);
+        this.cellY = Math.round(this.y/gridPrecision);
+        return this;
+      }
+
+      function projectile(x, y) {
+        this.speed = 10;
+        this.direction = 0;
+        this.size = 5;
+        this.x = x;
+        this.y = y;
+        this.cellX = Math.round(this.x/gridPrecision);
+        this.cellY = Math.round(this.y/gridPrecision);
+        this.power = 10;
+        return this;
+      }
+
+      function enemyProjectile(x,y, direction) {
+        this.speed = 6 + (level/8);
+        this.direction = direction;
+        this.size = 5;
+        this.x = x;
+        this.y = y;
+        this.cellX = Math.round(this.x/gridPrecision);
+        this.cellY = Math.round(this.y/gridPrecision);
+        this.power = 1;
+        return this;
+      }
+
+      function explosion(x, y) {
+        this.speed = 3;
+        this.direction = Math.random() * (2 * Math.PI);
+        this.x = x;
+        this.y = y;
+        this.alpha = 1;
+        this.size = 2 + (Math.random() * 10);
+        return this;
+      }
+
+      function move(a) {
+        ///check if attempting to leave boundary
+        if (a.y < 20) {
+          up = false;
+        }
+        if (a.y > 380) {
+          down = false;
+        }
+        if (a.x < 20) {
+          left = false;
+        }
+        if (a.x > 580) {
+          right = false;
+        }
+        ///UP, LEFT, RIGHT, DOWN
+        if (left == true) {
+          a.direction = Math.PI; 
+          a.speed = a.maxSpeed;
+        }
+        if (up == true) {
+          a.direction = 3*(Math.PI/2); 
+          a.speed = a.maxSpeed;
+        }
+        if (right == true) {
+          a.direction = 0; 
+          a.speed = a.maxSpeed;
+        }
+        if (down == true) {
+          a.direction = Math.PI/2; 
+          a.speed = a.maxSpeed;
+        }
+        ///DIAGONAL DIRECTIONS
+        if (left == true && up == true) {
+          a.direction = 5*(Math.PI/4); 
+          a.speed = a.maxSpeed;
+        }
+        if (left == true && down == true) {
+          a.direction = 3*(Math.PI/4); 
+          a.speed = a.maxSpeed;
+        }
+        if (right == true && up == true) {
+          a.direction = 7*(Math.PI/4); 
+          a.speed = a.maxSpeed;
+        }
+        if (right == true && down == true) {
+          a.direction = Math.PI/4; 
+          a.speed = a.maxSpeed;
+        }
+        ///STOP
+        if (left == false && up == false && right == false && down == false) a.speed = 0;
+        ///MOVE
+        a.x += Math.cos(a.direction) * a.speed;
+        a.y += Math.sin(a.direction) * a.speed;
+        return a;
+      }
+
+      function moveStar(a) {
+        a.x -= a.speed;
+        if (a.x < 0) {
+          a.x = 600;
+          a.size = (Math.random()*5)+1;
+          a.y = Math.random()*400;
+          a.speed = (Math.random()*5)+1;
+        }
+      }
+
+      function moveProjectile(a) {
+        a.x += a.speed;
+      }
+
+      function moveEnemyProjectile(a) {
+        a.x += Math.cos(a.direction) * a.speed;
+        a.y += Math.sin(a.direction) * a.speed;
+      }
+
+      function moveObstacle(a) {
+        a.x -= a.speed;
+        return a;
+      }
+
+      function moveExplosion(a) {
+        a.x += Math.cos(a.direction) * a.speed;
+        a.y += Math.sin(a.direction) * a.speed;
+      }
+
+      function moveEnemy1(a) {
+        a.direction = Math.atan2(player1.y - a.y, player1.x - a.x);
+        a.x += Math.cos(a.direction) * a.speed;
+        a.y += Math.sin(a.direction) * a.speed;
+      }
+
+
+      function moveEnemy2(a) {
+        a.direction = Math.atan2(player1.y - a.y, player1.x - a.x);
+        a.x += Math.cos(a.direction) * a.speed;
+        a.y += Math.sin(a.direction) * a.speed;
+        if (Math.round(Math.random()*100) == 1) {
+          enemyProjectileHolder[enemyProjectileCounter] = new enemyProjectile(a.x, a.y, a.direction);
+          enemyProjectileCounter++;
+        }
+      }
+
+      function moveBoss(a) {
+        a.rotation = Math.atan2(player1.y - a.y, player1.x - a.x);
+        if (Math.abs(200-a.x) > 3 && Math.abs(400-a.y) > 3) {
+          a.direction = Math.atan2(200 - a.y, 400 - a.x);
+          a.x += Math.cos(a.direction) * a.speed;
+          a.y += Math.sin(a.direction) * a.speed;
+        }
+        if (Math.round(Math.random()*(100-level)) == 1) {
+          enemyProjectileHolder[enemyProjectileCounter] = new enemyProjectile(a.x, a.y, a.rotation);
+          enemyProjectileCounter++;
+        }
+        if (Math.round(Math.random()*(200-level)) == 1) {
+          for (c=0; c<50; c++) {
+            enemyProjectileHolder[enemyProjectileCounter] = new enemyProjectile(a.x, a.y, (2-((50/c)*2))*Math.PI);
+            enemyProjectileCounter++;
+          }
+        }
+      }
+
+      function movebonusItem(a) {
+        a.x += Math.cos(a.direction) * a.speed;
+        a.y += Math.sin(a.direction) * a.speed;
+      }
+
+      function fireProjectile(a) {
+        if (fire == true && player1.ammo > 0) {
+          if (player1.upgradeAtk == true) {
+            projectileHolder[projectileCounter] = new projectile(a.x-(player1.size/2), a.y-player1.size);
+            projectileCounter++;
+            projectileHolder[projectileCounter] = new projectile(a.x-(player1.size/2), a.y+player1.size);
+            projectileCounter++;
+          }
+          projectileHolder[projectileCounter] = new projectile(a.x, a.y);
+          projectileCounter++;
+          player1.ammo--;
+          fire = false;
+        }
+      }
+
+      function drawPlayer1() {
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        ///IF ATTACK MOD ACTIVE
+        if (player1.upgradeAtk == true) {
+          ctx.save();
+          ctx.translate(player1.x, player1.y-(player1.size*1.2));
+          ctx.rotate(Math.PI/4);
+          ctx.fillStyle="rgb(200,125,125)";
+          ctx.fillRect(0,0,player1.size*0.8,player1.size*0.75);
+          ctx.restore();
+          ctx.save();
+          ctx.translate(player1.x, player1.y+(player1.size*0.1));
+          ctx.rotate(Math.PI/4);
+          ctx.fillStyle="rgb(200,125,125)";
+          ctx.fillRect(0,0,player1.size*0.8,player1.size*0.8);
+          ctx.restore();
+        }
+        ctx.save();
+        ctx.translate(player1.x, player1.y);
+        ctx.rotate(Math.PI/4);
+        ///IF DEFENCE MOD ACTIVE
+        if (player1.upgradeDef == true) {
+          ctx.fillStyle="rgb(100,255,175)";
+          ctx.fillRect(0 - (player1.size/2), 0 - (player1.size*0.7), player1.size*1.2, player1.size*1.2);
+        }
+        ctx.fillStyle="rgb(125,125,125)";
+        ctx.fillRect(0 - (player1.size/2), 0 - (player1.size/2), player1.size, player1.size);
+        ctx.restore();
+        ctx.save();
+        ctx.translate(player1.x - (player1.size*0.6), player1.y);
+        ctx.rotate(Math.PI/4);
+        ctx.fillStyle="rgb(125,125,125)";
+        ctx.fillRect(0 - ((player1.size*0.6)/2), 0 - ((player1.size*0.6)/2), (player1.size*0.6), (player1.size*0.6));
+        ctx.restore();
+        ctx.fillStyle="rgb(100,150, 200)";
+        ctx.fillRect(player1.x-(player1.size/2), player1.y-(player1.size/gridPrecision), player1.size, player1.size/8)
+      }
+
+      function drawStar(a) {
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle="rgba(255,255,255,0.5)";
+        ctx.fillRect(a.x - (a.size/2), a.y - (a.size/2), a.size, a.size);
+      }
+
+      function drawProjectile(a) {
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle="rgb(255,0,0)";
+        ctx.fillRect(a.x - (a.size/2), a.y - (a.size/2), a.size, a.size);
+      }
+
+      function drawObstacle(a) {
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle="rgb(125,125,125)";
+        ctx.save();
+        ctx.translate(a.x, a.y);
+        ctx.rotate(a.direction);
+        ctx.rotate((2*Math.PI)/3);
+        ctx.fillRect(0 - ((a.size*.7)/2), 0 - ((a.size*.7)/2), a.size*0.8, a.size*0.8);
+        ctx.rotate((2*Math.PI)/3);
+        ctx.fillRect(0 - ((a.size*.7)/2), 0 - ((a.size*.7)/2), a.size*0.8, a.size*0.8);
+        ctx.rotate((2*Math.PI)/3);
+        ctx.fillRect(0 - ((a.size*.7)/2), 0 - ((a.size*.7)/2), a.size*0.8, a.size*0.8);
+        ctx.restore();
+      }
+
+      function drawExplosion(a) {
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        ctx.save();
+        ctx.translate(a.x, a.y);
+        ctx.rotate(Math.random()*(2*Math.PI));
+        ctx.fillStyle="rgba(255,200,200," + a.alpha + ")";
+        ctx.fillRect(0 - (a.size/2), 0 - (a.size/2), a.size, a.size);
+        ctx.restore();
+      }
+
+      function drawEnemy1(a) {
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        ctx.save();
+        ctx.translate(a.x, a.y);
+        a.rotation -= 0.1;
+        ctx.rotate(a.rotation);
+        ctx.fillStyle="rgb(200,0,200)";
+        ctx.fillRect(0 - (a.size/2), 0 - (a.size/2), a.size, a.size);
+        ctx.rotate(Math.PI/4)
+        ctx.fillRect(0 - (a.size/2), 0 - (a.size/2), a.size, a.size);
+        ctx.restore();
+      }
+
+      function drawEnemy2(a) {
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle="rgb(255,0,0)";
+        ctx.save();
+        ctx.translate(a.x, a.y);
+        ctx.rotate(a.direction + (Math.PI/4));
+        ctx.fillRect(0 - (a.size*0.5), 0 - (a.size*0.5), a.size, a.size);
+        ctx.translate((a.size*.5), -(a.size*.5));
+        ctx.fillRect(0 - ((a.size*0.8)*0.5), 0 - ((a.size*0.8)*0.5), a.size*0.8, a.size*0.8);
+        ctx.translate(a.size*.25, -a.size*.25);
+        ctx.fillRect(0 - ((a.size*0.6)*0.5), 0 - ((a.size*0.6)*0.5), a.size*0.6, a.size*0.6);
+        ctx.restore();
+      }
+
+      function drawBoss(a) {
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        ctx.fillStyle="rgb(255,50,50)";
+        ctx.save();
+        ctx.translate(a.x, a.y);
+        ctx.rotate(a.rotation+(3*Math.PI/7.6));
+        ctx.rotate((2*Math.PI)/3);
+        ctx.fillRect(0 - ((a.size*.7)/2), 0 - ((a.size*.7)/2), a.size*0.8, a.size*0.8);
+        ctx.rotate((2*Math.PI)/3);
+        ctx.fillRect(0 - ((a.size*.7)/2), 0 - ((a.size*.7)/2), a.size*0.8, a.size*0.8);
+        ctx.rotate((2*Math.PI)/3);
+        ctx.fillRect(0 - ((a.size*.7)/2), 0 - ((a.size*.7)/2), a.size*0.8, a.size*0.8);
+        ctx.restore();
+      }
+
+      function drawEnemyProjectile(a) {
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        ctx.save();
+        ctx.translate(a.x, a.y);
+        ctx.rotate(a.direction);
+        ctx.fillStyle="rgb(255,50,50)";
+        ctx.fillRect(0 - (a.size/2), 0 - (a.size/2), a.size, a.size);
+        ctx.restore();
+      }
+
+      function drawbonusItem(a) {
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        if (a.type == 1) {
+          ctx.fillStyle="rgb(0,125,125)";
+          ctx.fillRect(a.x - (a.size/2), a.y - (a.size/2), a.size, a.size);
+          ctx.fillStyle="rgb(255,255,0)";
+          ctx.fillRect(a.x-((a.size*0.1)/2), a.y-((a.size*0.8)/2), a.size*0.1, a.size*0.8);
+          ctx.fillRect(a.x-((a.size*0.6)/2), a.y-((a.size*0.8)/2), a.size*0.1, a.size*0.8);
+          ctx.fillRect(a.x+((a.size*0.4)/2), a.y-((a.size*0.8)/2), a.size*0.1, a.size*0.8);
+        }
+        if (a.type == 2) {
+          ctx.fillStyle="rgb(0,125,125)";
+          ctx.fillRect(a.x - (a.size/2), a.y - (a.size/2), a.size, a.size);
+          ctx.fillStyle="rgb(255,0,0)";
+          ctx.fillRect(a.x-((a.size*0.7)/2), a.y-((a.size*0.8)/2), a.size*0.6, a.size*0.1);
+          ctx.fillRect(a.x-((a.size*0.7)/2), a.y+((a.size*0.6)/2), a.size*0.6, a.size*0.1);
+          ctx.fillRect(a.x-((a.size*0.5)/2), a.y-((a.size*0.1)/2), a.size*0.6, a.size*0.1);
+        }
+        if (a.type == 3) {
+          ctx.fillStyle="rgb(0,125,125)";
+          ctx.fillRect(a.x - (a.size/2), a.y - (a.size/2), a.size, a.size);
+          ctx.fillStyle="rgb(0,255,0)";
+          ctx.save();
+          ctx.translate(a.x, a.y);
+          ctx.rotate(Math.PI/4);
+          ctx.fillRect(0 - (a.size/2)*0.5, 0 - (a.size/2)*0.5, a.size*0.5, a.size*0.5);
+          ctx.fillStyle="rgb(0,125,125)";
+          ctx.translate(-a.size*0.1, a.size*0.1);
+          ctx.fillRect(0 - (a.size/2)*0.5, 0 - (a.size/2)*0.5, a.size*0.5, a.size*0.5);
+          ctx.restore();
+        }
+      }
+
+      function gridCollisionPossibilitiesLists() {
+        ///SET PLAYER GRID CELL
+        player1.cellX = Math.round(player1.x/gridPrecision);
+        player1.cellY = Math.round(player1.y/gridPrecision);
+        ///SET OBSTACLES GRID CELLS
+        if (obstacleCounter > 0) {
+          for (c=obstacleCountStartPos; c<obstacleCounter; c++) {
+            if (obstacleHolder[c] != 0) {
+              obstacleHolder[c].cellX = Math.round(obstacleHolder[c].x/gridPrecision);
+              obstacleHolder[c].cellY = Math.round(obstacleHolder[c].y/gridPrecision);
+            }
+          }
+        }
+        ///SET PROJECTILES GRID CELLS
+        if (projectileCounter > 0) {
+          for (c=projectileCountStartPos; c<projectileCounter; c++) {
+            if (projectileHolder[c] != 0) {
+              projectileHolder[c].cellX = Math.round(projectileHolder[c].x/gridPrecision);
+              projectileHolder[c].cellY = Math.round(projectileHolder[c].y/gridPrecision);
+            }
+          }
+        }
+        ///SET ENEMY1 GRID CELLS
+        if (enemy1Counter > 0) {
+          for (c=0; c<enemy1Counter; c++) {
+            if (enemy1Holder[c] != 0) {
+              enemy1Holder[c].cellX = Math.round(enemy1Holder[c].x/gridPrecision);
+              enemy1Holder[c].cellY = Math.round(enemy1Holder[c].y/gridPrecision);
+            }
+          }
+        }
+        ///SET ENEMY2 GRID CELLS
+        if (enemy2Counter > 0) {
+          for (c=0; c<enemy2Counter; c++) {
+            if (enemy2Holder[c] != 0) {
+              enemy2Holder[c].cellX = Math.round(enemy2Holder[c].x/gridPrecision);
+              enemy2Holder[c].cellY = Math.round(enemy2Holder[c].y/gridPrecision);
+            }
+          }
+        }
+        ///SET ENEMYPROJECTILE GRID CELLS
+        if (enemyProjectileCounter > 0) {
+          for (c=0; c<enemyProjectileCounter; c++) {
+            if (enemyProjectileHolder[c] != 0) {
+              enemyProjectileHolder[c].cellX = Math.round(enemyProjectileHolder[c].x/gridPrecision);
+              enemyProjectileHolder[c].cellY = Math.round(enemyProjectileHolder[c].y/gridPrecision);
+            }
+          }
+        }
+        ///SET bonusItem GRID CELLS
+        if (bonusItemCounter > 0) {
+          for (c=0; c<bonusItemCounter; c++) {
+            if (bonusItemHolder[c] != 0) {
+              bonusItemHolder[c].cellX = Math.round(bonusItemHolder[c].x/gridPrecision);
+              bonusItemHolder[c].cellY = Math.round(bonusItemHolder[c].y/gridPrecision);
+            }
+          }
+        }
+        ///SET Boss GRID CELLS
+        if (bossCounter > 0) {
+          for (c=0; c<bossCounter; c++) {
+            if (bossHolder[c] != 0) {
+              bossHolder[c].cellX = Math.round(bossHolder[c].x/gridPrecision);
+              bossHolder[c].cellY = Math.round(bossHolder[c].y/gridPrecision);
+            }
+          }
+        }
+      }
+
+      function checkForCollisions() {
+        var possibleCollision = false;
+        ///OBSTACLES VS PLAYER
+        if (obstacleCounter > 0) {
+          for (c=obstacleCountStartPos; c<obstacleCounter; c++) {
+            if (obstacleHolder[c] != 0) {
+              ///CHECK IF OBSTACLE HIT PLAYER
+              if (obstacleHolder[c].cellX-1 == player1.cellX && obstacleHolder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (obstacleHolder[c].cellX-1 == player1.cellX && obstacleHolder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (obstacleHolder[c].cellX-1 == player1.cellX && obstacleHolder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (obstacleHolder[c].cellX == player1.cellX && obstacleHolder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (obstacleHolder[c].cellX == player1.cellX && obstacleHolder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (obstacleHolder[c].cellX == player1.cellX && obstacleHolder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (obstacleHolder[c].cellX+1 == player1.cellX && obstacleHolder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (obstacleHolder[c].cellX+1 == player1.cellX && obstacleHolder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (obstacleHolder[c].cellX+1 == player1.cellX && obstacleHolder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (possibleCollision == true) {
+                ///USE DISTANCE FORMULA TO CHECK FOR COLLISION
+                var distance = Math.sqrt(((obstacleHolder[c].x-player1.x)*(obstacleHolder[c].x-player1.x))+((obstacleHolder[c].y-player1.y)*(obstacleHolder[c].y-player1.y)));
+                if (distance <= ((obstacleHolder[c].size/2)+(player1.size/2))) {
+                  obstacleHolder[c] = 0;
+                  player1.health -= 10;
+                  if (player1.health <= 0) {
+                    player1.upgradeAtk = false;
+                    player1.upgradeDef = false;
+                    player1.maxHealth = 10;
+                    lives--;
+                    player1.health = player1.maxHealth;
+                  }
+                }
+              }
+              possibleCollision = false;
+              ///CHECK OBSTACLES VS PROJECTILES
+              if (projectileCounter > 0) {
+                for (d=projectileCountStartPos; d<projectileCounter; d++) {
+                  if (projectileHolder[d] != 0) {
+                    if (obstacleHolder[c].cellX-1 == projectileHolder[d].cellX && obstacleHolder[c].cellY-1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (obstacleHolder[c].cellX-1 == projectileHolder[d].cellX && obstacleHolder[c].cellY == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (obstacleHolder[c].cellX-1 == projectileHolder[d].cellX && obstacleHolder[c].cellY+1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (obstacleHolder[c].cellX == projectileHolder[d].cellX && obstacleHolder[c].cellY-1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (obstacleHolder[c].cellX == projectileHolder[d].cellX && obstacleHolder[c].cellY == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (obstacleHolder[c].cellX == projectileHolder[d].cellX && obstacleHolder[c].cellY+1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (obstacleHolder[c].cellX+1 == projectileHolder[d].cellX && obstacleHolder[c].cellY-1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (obstacleHolder[c].cellX+1 == projectileHolder[d].cellX && obstacleHolder[c].cellY == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (obstacleHolder[c].cellX+1 == projectileHolder[d].cellX && obstacleHolder[c].cellY+1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    var distance = Math.sqrt(((projectileHolder[d].x-obstacleHolder[c].x)*(projectileHolder[d].x-obstacleHolder[c].x))+((projectileHolder[d].y-obstacleHolder[c].y)*(projectileHolder[d].y-obstacleHolder[c].y)));
+                    if (distance <= ((obstacleHolder[c].size/2)+(projectileHolder[d].size/2))) {
+                      for (e=0; e<obstacleHolder[c].size; e++) {
+                        explosionHolder[explosionCounter] = new explosion(obstacleHolder[c].x, obstacleHolder[c].y);
+                        explosionCounter++;
+                      }
+                      obstacleHolder[c].health -= projectileHolder[d].power;
+                      if (obstacleHolder[c].health <= 0) {
+                        obstacleHolder[c] = 0;
+                        score += 10;
+                      } 
+                      projectileHolder[d] = 0;
+                    }
+                  }
+                }
+              }
+              possibleCollision = false;
+            }		
+          }
+        }
+        ///CHECK ENEMY1 VS PLAYER
+        if (enemy1Counter > 0) {
+          for (c=0; c<enemy1Counter; c++) {
+            if (enemy1Holder[c] != 0) {
+              ///CHECK IF ENEMY1 HIT PLAYER
+              if (enemy1Holder[c].cellX-1 == player1.cellX && enemy1Holder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy1Holder[c].cellX-1 == player1.cellX && enemy1Holder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy1Holder[c].cellX-1 == player1.cellX && enemy1Holder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy1Holder[c].cellX == player1.cellX && enemy1Holder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy1Holder[c].cellX == player1.cellX && enemy1Holder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy1Holder[c].cellX == player1.cellX && enemy1Holder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy1Holder[c].cellX+1 == player1.cellX && enemy1Holder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy1Holder[c].cellX+1 == player1.cellX && enemy1Holder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy1Holder[c].cellX+1 == player1.cellX && enemy1Holder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (possibleCollision == true) {
+                ///USE DISTANCE FORMULA TO CHECK FOR COLLISION
+                var distance = Math.sqrt(((enemy1Holder[c].x-player1.x)*(enemy1Holder[c].x-player1.x))+((enemy1Holder[c].y-player1.y)*(enemy1Holder[c].y-player1.y)));
+                if (distance <= ((enemy1Holder[c].size/2)+(player1.size/2))) {
+                  enemy1Holder[c] = 0;
+                  player1.health -= 10;
+                  if (player1.health <= 0) {
+                    player1.upgradeAtk = false;
+                    player1.upgradeDef = false;
+                    player1.maxHealth = 10;
+                    lives--;
+                    player1.health = player1.maxHealth;
+                  }
+                }
+              }
+              possibleCollision = false;
+              ///CHECK ENEMY1 VS PROJECTILES
+              if (projectileCounter > 0) {
+                for (d=projectileCountStartPos; d<projectileCounter; d++) {
+                  if (projectileHolder[d] != 0) {
+                    if (enemy1Holder[c].cellX-1 == projectileHolder[d].cellX && enemy1Holder[c].cellY-1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy1Holder[c].cellX-1 == projectileHolder[d].cellX && enemy1Holder[c].cellY == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy1Holder[c].cellX-1 == projectileHolder[d].cellX && enemy1Holder[c].cellY+1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy1Holder[c].cellX == projectileHolder[d].cellX && enemy1Holder[c].cellY-1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy1Holder[c].cellX == projectileHolder[d].cellX && enemy1Holder[c].cellY == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy1Holder[c].cellX == projectileHolder[d].cellX && enemy1Holder[c].cellY+1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy1Holder[c].cellX+1 == projectileHolder[d].cellX && enemy1Holder[c].cellY-1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy1Holder[c].cellX+1 == projectileHolder[d].cellX && enemy1Holder[c].cellY == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy1Holder[c].cellX+1 == projectileHolder[d].cellX && enemy1Holder[c].cellY+1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    var distance = Math.sqrt(((projectileHolder[d].x-enemy1Holder[c].x)*(projectileHolder[d].x-enemy1Holder[c].x))+((projectileHolder[d].y-enemy1Holder[c].y)*(projectileHolder[d].y-enemy1Holder[c].y)));
+                    if (distance <= ((enemy1Holder[c].size/2)+(projectileHolder[d].size/2))) {
+                      for (e=0; e<enemy1Holder[c].size; e++) {
+                        explosionHolder[explosionCounter] = new explosion(enemy1Holder[c].x, enemy1Holder[c].y);
+                        explosionCounter++;
+                      }
+                      enemy1Holder[c].health -= projectileHolder[d].power;
+                      if (enemy1Holder[c].health <= 0) {
+                        enemy1Holder[c] = 0;
+                        score += 20;
+                      } 
+                      projectileHolder[d] = 0;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        ///CHECK ENEMY2 VS PLAYER
+        if (enemy2Counter > 0) {
+          for (c=0; c<enemy2Counter; c++) {
+            if (enemy2Holder[c] != 0) {
+              ///CHECK IF ENEMY2 HIT PLAYER
+              if (enemy2Holder[c].cellX-1 == player1.cellX && enemy2Holder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy2Holder[c].cellX-1 == player1.cellX && enemy2Holder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy2Holder[c].cellX-1 == player1.cellX && enemy2Holder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy2Holder[c].cellX == player1.cellX && enemy2Holder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy2Holder[c].cellX == player1.cellX && enemy2Holder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy2Holder[c].cellX == player1.cellX && enemy2Holder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy2Holder[c].cellX+1 == player1.cellX && enemy2Holder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy2Holder[c].cellX+1 == player1.cellX && enemy2Holder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemy2Holder[c].cellX+1 == player1.cellX && enemy2Holder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (possibleCollision == true) {
+                ///USE DISTANCE FORMULA TO CHECK FOR COLLISION
+                var distance = Math.sqrt(((enemy2Holder[c].x-player1.x)*(enemy2Holder[c].x-player1.x))+((enemy2Holder[c].y-player1.y)*(enemy2Holder[c].y-player1.y)));
+                if (distance <= ((enemy2Holder[c].size/2)+(player1.size/2))) {
+                  enemy2Holder[c] = 0;
+                  player1.health -= 10;
+                  if (player1.health <= 0) {
+                    player1.upgradeAtk = false;
+                    player1.upgradeDef = false;
+                    player1.maxHealth = 10;
+                    lives--;
+                    player1.health = player1.maxHealth;
+                  }
+                }
+              }
+              possibleCollision = false;
+              ///CHECK ENEMY1 VS PROJECTILES
+              if (projectileCounter > 0) {
+                for (d=projectileCountStartPos; d<projectileCounter; d++) {
+                  if (projectileHolder[d] != 0) {
+                    if (enemy2Holder[c].cellX-1 == projectileHolder[d].cellX && enemy2Holder[c].cellY-1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy2Holder[c].cellX-1 == projectileHolder[d].cellX && enemy2Holder[c].cellY == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy2Holder[c].cellX-1 == projectileHolder[d].cellX && enemy2Holder[c].cellY+1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy2Holder[c].cellX == projectileHolder[d].cellX && enemy2Holder[c].cellY-1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy2Holder[c].cellX == projectileHolder[d].cellX && enemy2Holder[c].cellY == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy2Holder[c].cellX == projectileHolder[d].cellX && enemy2Holder[c].cellY+1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy2Holder[c].cellX+1 == projectileHolder[d].cellX && enemy2Holder[c].cellY-1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy2Holder[c].cellX+1 == projectileHolder[d].cellX && enemy2Holder[c].cellY == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (enemy2Holder[c].cellX+1 == projectileHolder[d].cellX && enemy2Holder[c].cellY+1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    var distance = Math.sqrt(((projectileHolder[d].x-enemy2Holder[c].x)*(projectileHolder[d].x-enemy2Holder[c].x))+((projectileHolder[d].y-enemy2Holder[c].y)*(projectileHolder[d].y-enemy2Holder[c].y)));
+                    if (distance <= ((enemy2Holder[c].size/2)+(projectileHolder[d].size/2))) {
+                      for (e=0; e<enemy2Holder[c].size; e++) {
+                        explosionHolder[explosionCounter] = new explosion(enemy2Holder[c].x, enemy2Holder[c].y);
+                        explosionCounter++;
+                      }
+                      enemy2Holder[c].health -= projectileHolder[d].power;
+                      if (enemy2Holder[c].health <= 0) {
+                        enemy2Holder[c] = 0;
+                        score += 10;
+                      } 
+                      projectileHolder[d] = 0;
+                    }
+                  }
+                }
+              }
+              possibleCollision = false;
+            }
+          }
+        }
+        ///CHECK Boss VS PLAYER
+        if (bossCounter > 0) {
+          for (c=0; c<bossCounter; c++) {
+            if (bossHolder[c] != 0) {
+              ///CHECK IF boss HIT PLAYER
+              if (bossHolder[c].cellX-1 == player1.cellX && bossHolder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bossHolder[c].cellX-1 == player1.cellX && bossHolder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bossHolder[c].cellX-1 == player1.cellX && bossHolder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bossHolder[c].cellX == player1.cellX && bossHolder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bossHolder[c].cellX == player1.cellX && bossHolder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bossHolder[c].cellX == player1.cellX && bossHolder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bossHolder[c].cellX+1 == player1.cellX && bossHolder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bossHolder[c].cellX+1 == player1.cellX && bossHolder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bossHolder[c].cellX+1 == player1.cellX && bossHolder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (possibleCollision == true) {
+                ///USE DISTANCE FORMULA TO CHECK FOR COLLISION
+                var distance = Math.sqrt(((bossHolder[c].x-player1.x)*(bossHolder[c].x-player1.x))+((bossHolder[c].y-player1.y)*(bossHolder[c].y-player1.y)));
+                if (distance <= ((bossHolder[c].size/2)+(player1.size/2))) {
+                  bossHolder[c] = 0;
+                  player1.health -= 50;
+                  if (player1.health <= 0) {
+                    player1.upgradeAtk = false;
+                    player1.upgradeDef = false;
+                    player1.maxHealth = 10;
+                    lives--;
+                    player1.health = player1.maxHealth;
+                  }
+                }
+              }
+              possibleCollision = false;
+              ///CHECK boss VS PROJECTILES
+              if (projectileCounter > 0) {
+                for (d=projectileCountStartPos; d<projectileCounter; d++) {
+                  if (projectileHolder[d] != 0) {
+                    if (bossHolder[c].cellX-1 == projectileHolder[d].cellX && bossHolder[c].cellY-1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (bossHolder[c].cellX-1 == projectileHolder[d].cellX && bossHolder[c].cellY == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (bossHolder[c].cellX-1 == projectileHolder[d].cellX && bossHolder[c].cellY+1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (bossHolder[c].cellX == projectileHolder[d].cellX && bossHolder[c].cellY-1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (bossHolder[c].cellX == projectileHolder[d].cellX && bossHolder[c].cellY == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (bossHolder[c].cellX == projectileHolder[d].cellX && bossHolder[c].cellY+1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (bossHolder[c].cellX+1 == projectileHolder[d].cellX && bossHolder[c].cellY-1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (bossHolder[c].cellX+1 == projectileHolder[d].cellX && bossHolder[c].cellY == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    if (bossHolder[c].cellX+1 == projectileHolder[d].cellX && bossHolder[c].cellY+1 == projectileHolder[d].cellY) {
+                      possibleCollision = true;
+                    }
+                    var distance = Math.sqrt(((projectileHolder[d].x-bossHolder[c].x)*(projectileHolder[d].x-bossHolder[c].x))+((projectileHolder[d].y-bossHolder[c].y)*(projectileHolder[d].y-bossHolder[c].y)));
+                    if (distance <= ((bossHolder[c].size/2)+(projectileHolder[d].size/2))) {
+                      for (e=0; e<bossHolder[c].size; e++) {
+                        explosionHolder[explosionCounter] = new explosion(bossHolder[c].x, bossHolder[c].y);
+                        explosionCounter++;
+                      }
+                      bossHolder[c].health -= projectileHolder[d].power;
+                      projectileHolder[d] = 0;
+                      if (bossHolder[c].health <= 0) {
+                        bossHolder[c] = 0;
+                        score += 1000;
+                      } 
+                    }
+                  }
+                }
+              }
+              possibleCollision = false;
+            }
+          }
+        }
+        ///CHECK ENEMYPROJECTILE VS PLAYER
+        if (enemyProjectileCounter > 0) {
+          for (c=0; c<enemyProjectileCounter; c++) {
+            if (enemyProjectileHolder[c] != 0) {
+              ///CHECK IF ENEMYPROJECTILES HIT PLAYER
+              if (enemyProjectileHolder[c].cellX-1 == player1.cellX && enemyProjectileHolder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemyProjectileHolder[c].cellX-1 == player1.cellX && enemyProjectileHolder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemyProjectileHolder[c].cellX-1 == player1.cellX && enemyProjectileHolder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemyProjectileHolder[c].cellX == player1.cellX && enemyProjectileHolder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemyProjectileHolder[c].cellX == player1.cellX && enemyProjectileHolder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemyProjectileHolder[c].cellX == player1.cellX && enemyProjectileHolder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemyProjectileHolder[c].cellX+1 == player1.cellX && enemyProjectileHolder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemyProjectileHolder[c].cellX+1 == player1.cellX && enemyProjectileHolder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (enemyProjectileHolder[c].cellX+1 == player1.cellX && enemyProjectileHolder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (possibleCollision == true) {
+                ///USE DISTANCE FORMULA TO CHECK FOR COLLISION
+                var distance = Math.sqrt(((enemyProjectileHolder[c].x-player1.x)*(enemyProjectileHolder[c].x-player1.x))+((enemyProjectileHolder[c].y-player1.y)*(enemyProjectileHolder[c].y-player1.y)));
+                if (distance <= ((enemyProjectileHolder[c].size/2)+(player1.size/2))) {
+                  player1.health -= enemyProjectileHolder[c].power;
+                  enemyProjectileHolder[c] = 0;
+                  if (player1.health <= 0) {
+                    player1.upgradeAtk = false;
+                    player1.upgradeDef = false;
+                    player1.maxHealth = 10;
+                    lives--;
+                    player1.health = player1.maxHealth;
+                  }
+                }
+              }
+              possibleCollision = false;
+            }
+          }
+        }
+        ///CHECK bonusItem VS PLAYER
+        if (bonusItemCounter > 0) {
+          for (c=0; c<bonusItemCounter; c++) {
+            if (bonusItemHolder[c] != 0) {
+              ///CHECK IF bonusItem HIT PLAYER
+              if (bonusItemHolder[c].cellX-1 == player1.cellX && bonusItemHolder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bonusItemHolder[c].cellX-1 == player1.cellX && bonusItemHolder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bonusItemHolder[c].cellX-1 == player1.cellX && bonusItemHolder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bonusItemHolder[c].cellX == player1.cellX && bonusItemHolder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bonusItemHolder[c].cellX == player1.cellX && bonusItemHolder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bonusItemHolder[c].cellX == player1.cellX && bonusItemHolder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bonusItemHolder[c].cellX+1 == player1.cellX && bonusItemHolder[c].cellY-1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bonusItemHolder[c].cellX+1 == player1.cellX && bonusItemHolder[c].cellY == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (bonusItemHolder[c].cellX+1 == player1.cellX && bonusItemHolder[c].cellY+1 == player1.cellY) {
+                possibleCollision = true;
+              }
+              if (possibleCollision == true) {
+                ///USE DISTANCE FORMULA TO CHECK FOR COLLISION
+                var distance = Math.sqrt(((bonusItemHolder[c].x-player1.x)*(bonusItemHolder[c].x-player1.x))+((bonusItemHolder[c].y-player1.y)*(bonusItemHolder[c].y-player1.y)));
+                if (distance <= ((bonusItemHolder[c].size/2)+(player1.size/2))) {
+                  if (bonusItemHolder[c].type == 1) {
+                    player1.ammo += 100;
+                  }
+                  if (bonusItemHolder[c].type == 2) {
+                    player1.upgradeAtk = true;
+                  }
+                  if (bonusItemHolder[c].type == 3) {
+                    player1.upgradeDef = true;
+                    player1.maxHealth = 50;
+                    player1.health = player1.maxHealth;
+                  }
+                  bonusItemHolder[c] = 0;
+                }
+              }
+              possibleCollision = false;
+            }
+          }
+        }
+      }
+
+    </script>
+  </head>
+  <body onLoad="init()">
+    <h1>Keyboard Input Test</h1>
+    <canvas id="myCanvas" width="600px" height="400px">Your browser does not support the canvas tag.</canvas>
+    <h2>Instructions</h2>
+    <p>Use arrow keys to move around.<br />
+      Use the spacebar to fire projectiles.<br />
+      Try to avoid or shoot down the incoming obstacles.</p>
+  </body>
+</html>

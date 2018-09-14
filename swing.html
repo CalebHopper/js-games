@@ -1,0 +1,75 @@
+﻿<html>
+  <head>
+    <script>
+      var left = false;
+      var right = false;
+      var swing = new Swing(100,100);
+      var layTrack = false;
+      function init() {
+        canvas = document.getElementById("myCanvas");
+        ctx = canvas.getContext("2d");
+        window.addEventListener('keyup',this.checkUp,false);
+        window.addEventListener('keydown',this.checkDown,false);
+        main();
+      }
+
+      function main() {
+        ctx.fillStyle="rgb(225,225,225)";
+        ctx.fillRect(0, 0, 200, 200);
+        moveSwing(swing);
+        drawSwing(swing);
+        window.requestAnimationFrame(main);
+      }
+
+      function checkDown(e) {
+        var code = e.keyCode;
+        switch(code) {
+          case 37: left = true; break; ///LEFT
+          case 39: right = true; break; ///RIGHT
+          default: ;
+        }
+      }
+
+      function checkUp(e) {
+        var code = e.keyCode;
+        switch(code) {
+          case 37: left = false; break; ///LEFT
+          case 39: right = false; break; ///RIGHT
+          default: ;
+        }
+      }
+
+      function Swing(x, y) {
+        this.x = x;
+        this.y = y;
+        this.hspeed = 0;
+        return this;
+      }
+
+      function moveSwing(a) {
+        
+        if (left && a.hspeed > -2) {
+          a.hspeed--;
+        }
+        if (right && a.hspeed < 2) {
+          a.hspeed++;
+        }
+        a.x += a.hspeed;
+        if (a.hspeed < 0) {
+          a.hspeed += 0.1;
+        }
+        if (a.hspeed > 0) {
+          a.hspeed -= 0.1;
+        }
+      }
+
+      function drawSwing(a) {
+        ctx.fillStyle="rgb(0,0,0)";
+        ctx.fillRect(a.x-5, a.y-5, 10, 10);
+      }		
+    </script>
+  </head>
+  <body onLoad="init()">
+    <canvas id="myCanvas" width="200px" height="200px">Hi.</canvas>
+  </body>
+</html>
