@@ -18,6 +18,9 @@
           edge(circles[x]);
         }
         for (var x=0; x<circles.length; x++) {
+          grow(circles[x]);
+        }
+        for (var x=0; x<circles.length; x++) {
           drawCircle(circles[x]);
         }
         window.requestAnimationFrame(main);
@@ -26,6 +29,7 @@
         this.x = x;
         this.y = y;
         this.r = 10;
+        this.growing = true;
       }
       function drawCircle(a) {
         ctx.save();
@@ -36,17 +40,16 @@
         ctx.restore();
       }
       function grow(a) {
-        a.r++;
+        if (a.growing) {
+          a.r++;
+        }
       }
       function edge(a) {
-        temp = true;
         for (b in circles) {
           if ((a.r + b.r) < distance(a, b)) {
-            temp = false;
+            a.growing = false;
+            b.growing = false;
           }
-        }
-        if (temp) {
-          grow(a);
         }
       }
       function distance(a, b) {
