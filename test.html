@@ -6,12 +6,34 @@
         ctx = canvas.getContext("2d");
         canvas.width = 400;
         canvas.height = 400;
+        circles = [];
+        for (var x=0; x<100; x++) {
+          circles[x] = new Circle(Math.random()*canvas.width, Math.random()*canvas.height);
+        }
         main();
       }
       function main() {
         //main loop
         ctx.clearRect(0,0,canvas.width,canvas.height);
         window.requestAnimationFrame(main);
+      }
+      function Circle(x,y) {
+        this.x = x;
+        this.y = y;
+        this.r = 0;
+      }
+      function grow(a) {
+        a.r++;
+      }
+      function edge(a) {
+        for (b in circles) {
+          if ((a.r + b.r) < distance(a, b)) {
+            grow(a);
+          }
+        }
+      }
+      function distance(a, b) {
+        return Math.sqrt(((a.x-b.x)*(a.x-b.x))+((a.y-b.y)*(a.y-b.y)));
       }
     </script>
   </head>
