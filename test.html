@@ -33,10 +33,14 @@
         a.r++;
       }
       function edge(a) {
+        temp = true;
         for (b in circles) {
-          if ((a.r + b.r) < distance(a, b)) {
-            grow(a);
+          if ((a.r + b.r) > distance(a, b)) {
+            temp = false;
           }
+        }
+        if (temp) {
+          grow(a);
         }
       }
       function distance(a, b) {
