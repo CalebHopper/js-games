@@ -28,7 +28,7 @@
       function Circle(x,y) {
         this.x = x;
         this.y = y;
-        this.r = 10;
+        this.r = 1;
         this.growing = true;
       }
       function drawCircle(a) {
@@ -45,10 +45,10 @@
         }
       }
       function edge(a) {
-        for (b in circles) {
-          if ((a.r + b.r) < distance(a, b)) {
+        for (var x=0; x<circles.length; x++) {
+          if ((a.r + circles[x].r) < distance(a, circles[x])) {
             a.growing = false;
-            b.growing = false;
+            circles[x].growing = false;
           }
         }
       }
