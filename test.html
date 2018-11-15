@@ -13,7 +13,6 @@
         main();
       }
       function main() {
-        //main loop
         ctx.clearRect(0,0,canvas.width,canvas.height);
         window.requestAnimationFrame(main);
       }
@@ -21,6 +20,14 @@
         this.x = x;
         this.y = y;
         this.r = 0;
+      }
+      function drawCircle(a) {
+        ctx.save();
+        ctx.translate(a.x, a.y);
+        ctx.beginPath();
+        ctx.arc(0,0,a.r,0,Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
       }
       function grow(a) {
         a.r++;
