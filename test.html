@@ -46,7 +46,7 @@
       }
       function edge(a) {
         for (var x=0; x<circles.length; x++) {
-          if ((a.r + circles[x].r) > distance(a, circles[x])) {
+          if (distance(a, circles[x]) < (a.r + circles[x].r)) {
             a.growing = false;
             circles[x].growing = false;
           }
